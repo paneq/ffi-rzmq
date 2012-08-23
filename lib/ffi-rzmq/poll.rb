@@ -84,7 +84,7 @@ module ZMQ
           item[:fd] = fd
         end
 
-        @raw_to_socket[item.socket.address] = sock
+        @raw_to_socket[item.socket.address] = sock unless sock.respond_to?(:fileno)
         @items << item
       end
 
@@ -157,19 +157,24 @@ module ZMQ
     #
     def delete sock
       unless (size = @sockets.size).zero?
-        if sock.socket.nil?
-          # slow code path! need to iterate through all sockets in the
-          # poll items array to figure out which one has been closed
-          slow_path_delete(sock)
+        if sock.respond_to?(:fileno)
+          @sockets.delete(sock)
+          @items.delete(sock)
         else
-          @sockets.delete_if { |socket| socket.socket.address == sock.socket.address }
-          socket_deleted = size != @sockets.size
+          if sock.socket.nil?
+            # slow code path! need to iterate through all sockets in the
+            # poll items array to figure out which one has been closed
+            slow_path_delete(sock)
+          else
+            @sockets.delete_if { |socket| socket.socket.address == sock.socket.address }
+            socket_deleted = size != @sockets.size
 
-          item_deleted = @items.delete sock
+            item_deleted = @items.delete sock
 
-          raw_deleted = @raw_to_socket.delete(sock.socket.address)
+            raw_deleted = @raw_to_socket.delete(sock.socket.address)
 
-          socket_deleted && item_deleted && raw_deleted
+            socket_deleted && item_deleted && raw_deleted
+          end
         end
       else
         false
