@@ -161,6 +161,10 @@ module ZMQ
         (self[:revents] & ZMQ::POLLOUT) > 0
       end
 
+      def error?
+        (self[:revents] & ZMQ::POLLERR) > 0
+      end
+
       def both_accessible?
         readable? && writable?
       end
@@ -215,7 +219,7 @@ module ZMQ
       attach_function :zmq_msg_get, [:pointer, :int], :int
       @blocking = true
       attach_function :zmq_msg_set, [:pointer, :int, :int], :int
-      
+
       # Monitoring API
       @blocking = true
       attach_function :zmq_ctx_set_monitor, [:pointer, :pointer], :int
@@ -233,7 +237,7 @@ module ZMQ
       attach_function :zmq_sendmsg, [:pointer, :pointer, :int], :int
       @blocking = true
       attach_function :zmq_send, [:pointer, :pointer, :size_t, :int], :int
-      
+
       module EventDataLayout
         def self.included(base)
           base.class_eval do
@@ -259,7 +263,7 @@ module ZMQ
 
         def to_s; inspect; end
       end # class EventData
-      
+
     end
   end
 

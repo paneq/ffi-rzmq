@@ -5,12 +5,13 @@ module ZMQ
     extend Forwardable
 
     def_delegators :@poll_items, :size, :inspect
-    attr_reader :readables, :writables
+    attr_reader :readables, :writables, :errors
 
     def initialize
       @poll_items = ZMQ::PollItems.new
       @readables = []
       @writables = []
+      @errors    = []
     end
 
     # Checks each registered socket for selectability based on the poll items'
@@ -64,7 +65,7 @@ module ZMQ
     # will only get registered at most once. Calling multiple times with
     # different values for +events+ will OR the event information together.
     #
-    def register pollable, events = ZMQ::POLLIN | ZMQ::POLLOUT
+    def register pollable, events = ZMQ::POLLIN | ZMQ::POLLOUT | ZMQ::POLLERR
       return if pollable.nil? || events.zero?
 
       unless item = @poll_items[pollable]
@@ -134,10 +135,12 @@ module ZMQ
     def update_selectables
       @readables.clear
       @writables.clear
+      @errors.clear
 
       @poll_items.each do |poll_item|
         @readables << poll_item.pollable if poll_item.readable?
         @writables << poll_item.pollable if poll_item.writable?
+        @errors    << poll_item.pollable if poll_item.error?
       end
     end
 

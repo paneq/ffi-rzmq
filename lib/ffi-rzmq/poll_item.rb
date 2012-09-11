@@ -4,7 +4,7 @@ module ZMQ
   class PollItem
     extend Forwardable
 
-    def_delegators :@poll_item, :pointer, :readable?, :writable?
+    def_delegators :@poll_item, :pointer, :readable?, :writable?, :error?
     attr_accessor :pollable, :poll_item
 
     def initialize(zmq_poll_item = nil)
